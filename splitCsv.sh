@@ -15,3 +15,5 @@
     for i in ${SPLIT_PATH}*; do
         sed -i -e "1i$HEADER" "$i"
     done
+
+sed -i -e 's/<csv-firebak-br>/\n/g' "${DIR}/*.csv"
