@@ -1,10 +1,10 @@
 'use strict';
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var _axios = require('axios');
 
@@ -42,18 +42,16 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @param  {[spec]} destination =             `./backups/${new Date(         [description]
  * @return {[spec]}             [description]
  */
-
 exports.default = function backup() {
-  var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-  var _ref$firebase = _ref.firebase;
-  var firebase = _ref$firebase === undefined ? '' : _ref$firebase;
-  var _ref$secret = _ref.secret;
-  var secret = _ref$secret === undefined ? '' : _ref$secret;
-  var _ref$collections = _ref.collections;
-  var collections = _ref$collections === undefined ? [] : _ref$collections;
-  var _ref$destination = _ref.destination;
-  var destination = _ref$destination === undefined ? './backups/' + new Date().getFullYear() + '.' + ('0' + (new Date().getMonth() + 1)).slice(-2) + '.' + ('0' + new Date().getDate()).slice(-2) + '.' + new Date().getHours() : _ref$destination;
+  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      _ref$firebase = _ref.firebase,
+      firebase = _ref$firebase === undefined ? '' : _ref$firebase,
+      _ref$secret = _ref.secret,
+      secret = _ref$secret === undefined ? '' : _ref$secret,
+      _ref$collections = _ref.collections,
+      collections = _ref$collections === undefined ? [] : _ref$collections,
+      _ref$destination = _ref.destination,
+      destination = _ref$destination === undefined ? './backups/' + new Date().getFullYear() + '.' + ('0' + (new Date().getMonth() + 1)).slice(-2) + '.' + ('0' + new Date().getDate()).slice(-2) + '.' + new Date().getHours() : _ref$destination;
 
   var maxRequestSize, totalRequestSize, totalObjects, totalDuration, backupRules, dirs, currentDir, introTable, _backup, filename, t1, result, t2, tableComplete, table;
 
@@ -70,6 +68,7 @@ exports.default = function backup() {
 
         case 3:
           backupRules = _context.sent;
+
 
           // If collections are specified, keep only the backup
           // rules that match a collection name.
@@ -119,6 +118,7 @@ exports.default = function backup() {
 
           _backup = backupRules.shift();
 
+
           console.info(' >> Backup starting: ' + _backup.path);
 
           filename = destination + '/' + _backup.path + '.csv';
@@ -129,6 +129,7 @@ exports.default = function backup() {
         case 23:
           result = _context.sent;
           t2 = new Date().getTime(), tableComplete = new _cliTable2.default();
+
 
           tableComplete.push({ 'file': filename }, { 'rule': _backup.rule }, { 'duration (sec)': (t2 - t1) / 1000 }, { 'max request size (mb)': result.maxRequestSize / 1000000 }, { 'total request size (mb)': result.totalRequestSize / 1000000 }, { 'total objects (not counting nested)': result.totalObjects });
 
@@ -161,11 +162,11 @@ exports.default = function backup() {
 function shardedBackupToFile(_ref2) {
   var _this = this;
 
-  var firebase = _ref2.firebase;
-  var path = _ref2.path;
-  var rule = _ref2.rule;
-  var secret = _ref2.secret;
-  var filename = _ref2.filename;
+  var firebase = _ref2.firebase,
+      path = _ref2.path,
+      rule = _ref2.rule,
+      secret = _ref2.secret,
+      filename = _ref2.filename;
 
   var limitToFirst, allKeys, store, startAt, count, maxRequestSize, totalRequestSize, storeToFile, _loop;
 
@@ -174,13 +175,27 @@ function shardedBackupToFile(_ref2) {
       switch (_context3.prev = _context3.next) {
         case 0:
           storeToFile = function storeToFile() {
-            var paths = (0, _lodash.keys)(store),
+            var _require = require('json2csv'),
+                parse = _require.parse;
 
+            var paths = (0, _lodash.keys)(store);
             // Important that there be no space
-            csvLines = paths.map(function (path) {
-              return '"' + path + '","' + store[path] + '"';
+            //csvLines = paths.map(path => `"${path}","${store[path]}"`);
+
+            paths.forEach(function (path) {
+              var value = store[path];
+              if (typeof value == 'string') {
+                value = value.replace(/(?:\r\n|\r|\n)/g, '<csv-firebak-br>');
+              }
+              var toCsv = {
+                'path': path,
+                'value': value
+              };
+
+              var opts = { eol: true, header: false };
+              var csv = parse(toCsv, opts) + "\n";
+              _fs2.default.appendFileSync(filename, csv, 'utf8');
             });
-            _fs2.default.appendFileSync(filename, csvLines.join('\n'), 'utf8');
             store = {};
           };
 
@@ -206,7 +221,7 @@ function shardedBackupToFile(_ref2) {
                 switch (_context2.prev = _context2.next) {
                   case 0:
                     _context2.next = 2;
-                    return regeneratorRuntime.awrap(_axios2.default.get('https://' + firebase + '.firebaseio.com/' + path + '.json', {
+                    return regeneratorRuntime.awrap(_axios2.default.get('https://' + firebase + '/' + path + '.json', {
                       params: {
                         auth: secret,
                         format: 'export',
@@ -282,16 +297,16 @@ function shardedBackupToFile(_ref2) {
 }
 
 function backupSecurityAndRules(_ref3) {
-  var firebase = _ref3.firebase;
-  var secret = _ref3.secret;
-  var filename = _ref3.filename;
+  var firebase = _ref3.firebase,
+      secret = _ref3.secret,
+      filename = _ref3.filename;
   var rulesResult;
   return regeneratorRuntime.async(function backupSecurityAndRules$(_context4) {
     while (1) {
       switch (_context4.prev = _context4.next) {
         case 0:
           _context4.next = 2;
-          return regeneratorRuntime.awrap(_axios2.default.get('https://' + firebase + '.firebaseio.com/.settings/rules/.json', {
+          return regeneratorRuntime.awrap(_axios2.default.get('https://' + firebase + '/.settings/rules/.json', {
             params: {
               auth: secret
             }
@@ -319,15 +334,15 @@ function backupSecurityAndRules(_ref3) {
  * @return {[type]}        [description]
  */
 function getBackupRules(_ref4) {
-  var firebase = _ref4.firebase;
-  var secret = _ref4.secret;
-  var rulesResult, rulesString, rulesObject, backupPaths, findBackupPaths;
+  var firebase = _ref4.firebase,
+      secret = _ref4.secret;
+  var rulesResult, rulesObject, backupPaths, findBackupPaths;
   return regeneratorRuntime.async(function getBackupRules$(_context5) {
     while (1) {
       switch (_context5.prev = _context5.next) {
         case 0:
           findBackupPaths = function findBackupPaths(object) {
-            var path = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
+            var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
 
             if (path.indexOf('firebak:') > -1) {
               backupPaths.push(path);
@@ -340,7 +355,7 @@ function getBackupRules(_ref4) {
           };
 
           _context5.next = 3;
-          return regeneratorRuntime.awrap(_axios2.default.get('https://' + firebase + '.firebaseio.com/.settings/rules/.json', {
+          return regeneratorRuntime.awrap(_axios2.default.get('https://' + firebase + '/.settings/rules/.json', {
             params: {
               auth: secret
             }
@@ -349,29 +364,34 @@ function getBackupRules(_ref4) {
         case 3:
           rulesResult = _context5.sent;
 
+
           // Convert the rules to an array, remove any comments per line,
           // and convert back to a string (JSON format).
-          rulesString = rulesResult.data.split('\n').map(function (line) {
-            if (line.indexOf('//') > -1) {
-              line = line.slice(0, line.indexOf('//'));
-            }
-            if (line.indexOf('/*') > -1) {
-              var head = line.slice(0, line.indexOf('/*')),
-                  tail = line.slice(line.indexOf('*/') + 2, line.length);
-              return head + tail;
-            }
-            return line;
-          }).join('');
+          // const rulesString = rulesResult.data.split('\n')
+          //   .map(line => {
+          //     if (line.indexOf('//') > -1) {
+          //       line = line.slice(0, line.indexOf('//'));
+          //     }
+          //     if (line.indexOf('/*') > -1) {
+          //       const
+          //         head = line.slice(0, line.indexOf('/*')),
+          //         tail = line.slice(line.indexOf('*/') + 2, line.length);
+          //       return head + tail;
+          //     }
+          //     return line;
+          //   })
+          //   .join('');
 
           // Rules are now in parseable JSON format, convert rules to an object
+          // const rulesObject = JSON.parse(rulesString);
 
-          rulesObject = JSON.parse(rulesString);
-
+          rulesObject = rulesResult.data;
           // Recursively visit all paths in the rules object.
           // Push any paths containing 'firebak:' into the backupPaths array.
           // This is similar but not quite the same as flattenObject function.
 
           backupPaths = [];
+
 
           findBackupPaths(rulesObject.rules);
 
@@ -394,7 +414,7 @@ function getBackupRules(_ref4) {
             };
           }));
 
-        case 9:
+        case 8:
         case 'end':
           return _context5.stop();
       }
@@ -406,7 +426,7 @@ function getBackupRules(_ref4) {
 // is the path to the corresponding data in the passed object.
 // e.g. { a: { b: 1 } } becomes { 'a/b': 1 }
 function flattenObject(object) {
-  var path = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
+  var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
 
   var flat = {};
   function visitChildren(innerObject, innerPath) {

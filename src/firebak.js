@@ -10,7 +10,7 @@ import restore from './restore';
 
 program.version(pkg.version)
   // Options that apply to all commands
-  .option('-f, --firebase <firebase>', 'All commands: Firebase name (e.g. myfirebase, not https://myfirebase.firebaseio.com)')
+  .option('-f, --firebase <firebase>', 'All commands: Firebase URL')
   .option('-sc, --secret <secret>', 'All commands: Authentication secret for firebase. If not supplied, looks for process.env.FIREBASE_SECRET')
   // Options that apply to only backup command
   .option('-d, --destination <destDir>', 'Backup: destination directory for storing backups.')
@@ -31,7 +31,7 @@ program.command('backup [collections...]')
         firebase: program.firebase,
         secret: program.secret || process.env.FIREBASE_SECRET
       });
-    } catch(error) {
+    } catch (error) {
       console.error('error!', error.toString());
     }
   });
@@ -49,7 +49,7 @@ program.command('restore [collections...]')
         source: program.source,
         overwrite: program.overwrite
       });
-    } catch(error) {
+    } catch (error) {
       console.error('error!', error.toString());
     }
   });

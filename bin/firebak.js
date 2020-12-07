@@ -26,9 +26,10 @@ Promise.onPossiblyUnhandledRejection(function (error) {
   console.error(JSON.stringify(error));throw error;
 });
 
+
 _commander2.default.version(_package2.default.version)
 // Options that apply to all commands
-.option('-f, --firebase <firebase>', 'All commands: Firebase name (e.g. myfirebase, not https://myfirebase.firebaseio.com)').option('-sc, --secret <secret>', 'All commands: Authentication secret for firebase. If not supplied, looks for process.env.FIREBASE_SECRET')
+.option('-f, --firebase <firebase>', 'All commands: Firebase URL').option('-sc, --secret <secret>', 'All commands: Authentication secret for firebase. If not supplied, looks for process.env.FIREBASE_SECRET')
 // Options that apply to only backup command
 .option('-d, --destination <destDir>', 'Backup: destination directory for storing backups.')
 // Options that apply to only restore command

@@ -1,5 +1,7 @@
-node_modules
+node_modules/*
+!node_modules/firebase/
 backups
 tarred
 npm-debug.log
 firebak*.tgz
+add-rules-for-backup.json

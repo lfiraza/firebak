@@ -18,12 +18,12 @@ export default async function restore({
 
   // Get ref and authenticate
   const
-    ref = new Firebase(`https://${firebase}.firebaseio.com`),
+    ref = new Firebase(`https://${firebase}`),
     authData = await ref.authWithCustomToken(secret);
 
   // Some info to start
   const introTable = new Table();
-  introTable.push({'date/time': new Date().toLocaleString() });
+  introTable.push({ 'date/time': new Date().toLocaleString() });
   console.info('\n >> Firebak: restore');
   console.info(introTable.toString());
 
@@ -41,7 +41,7 @@ export default async function restore({
   if (rules) {
     console.info(' >> Restore starting: rules');
     const rules = require(`${source}/rules.json`);
-    await ax.put(`https://${firebase}.firebaseio.com/.settings/rules/.json`, rules, {
+    await ax.put(`https://${firebase}/.settings/rules/.json`, rules, {
       params: {
         auth: secret
       }
@@ -95,15 +95,16 @@ export async function restoreFromCSV({ filename, ref, overwrite = false } = {}) 
   const
     converter = new (require("csvtojson").Converter)(),
     fileContents = await new Promise((resolve, reject) => {
-      converter.fromFile(filename , (error, result) => {
+      converter.fromFile(filename, (error, result) => {
         if (error) reject(error);
         else resolve(result);
       });
     });
 
-  while(fileContents.length > 0) {
+  while (fileContents.length > 0) {
     const promises = fileContents.splice(0, 100).map(object => {
-      const {path, value} = object;
+      const { path, value } = object;
+      console.log(`${filename} - Path: ${path}`);
       if (overwrite) {
         return ref.child(path).set(value)
       } else {

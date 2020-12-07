@@ -32,19 +32,18 @@ var _cliTable2 = _interopRequireDefault(_cliTable);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 exports.default = function restore() {
-  var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-  var _ref$all = _ref.all;
-  var all = _ref$all === undefined ? false : _ref$all;
-  var _ref$collections = _ref.collections;
-  var collections = _ref$collections === undefined ? [] : _ref$collections;
-  var _ref$firebase = _ref.firebase;
-  var firebase = _ref$firebase === undefined ? '' : _ref$firebase;
-  var _ref$rules = _ref.rules;
-  var rules = _ref$rules === undefined ? false : _ref$rules;
-  var secret = _ref.secret;
-  var source = _ref.source;
-  var overwrite = _ref.overwrite;
+  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      _ref$all = _ref.all,
+      all = _ref$all === undefined ? false : _ref$all,
+      _ref$collections = _ref.collections,
+      collections = _ref$collections === undefined ? [] : _ref$collections,
+      _ref$firebase = _ref.firebase,
+      firebase = _ref$firebase === undefined ? '' : _ref$firebase,
+      _ref$rules = _ref.rules,
+      rules = _ref$rules === undefined ? false : _ref$rules,
+      secret = _ref.secret,
+      source = _ref.source,
+      overwrite = _ref.overwrite;
 
   var ref, authData, introTable, dir, _rules, collection, filename;
 
@@ -52,12 +51,13 @@ exports.default = function restore() {
     while (1) {
       switch (_context.prev = _context.next) {
         case 0:
-          ref = new _firebase2.default('https://' + firebase + '.firebaseio.com');
+          ref = new _firebase2.default('https://' + firebase);
           _context.next = 3;
           return regeneratorRuntime.awrap(ref.authWithCustomToken(secret));
 
         case 3:
           authData = _context.sent;
+
 
           // Some info to start
           introTable = new _cliTable2.default();
@@ -91,7 +91,7 @@ exports.default = function restore() {
           console.info(' >> Restore starting: rules');
           _rules = require(source + '/rules.json');
           _context.next = 15;
-          return regeneratorRuntime.awrap(_axios2.default.put('https://' + firebase + '.firebaseio.com/.settings/rules/.json', _rules, {
+          return regeneratorRuntime.awrap(_axios2.default.put('https://' + firebase + '/.settings/rules/.json', _rules, {
             params: {
               auth: secret
             }
@@ -144,13 +144,14 @@ exports.default = function restore() {
  * @return {[type]}     [description]
  */
 
-function restoreFromCSV() {
-  var _ref2 = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-  var filename = _ref2.filename;
-  var ref = _ref2.ref;
-  var _ref2$overwrite = _ref2.overwrite;
-  var overwrite = _ref2$overwrite === undefined ? false : _ref2$overwrite;
+function restoreFromCSV() {
+  var _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      filename = _ref2.filename,
+      ref = _ref2.ref,
+      _ref2$overwrite = _ref2.overwrite,
+      overwrite = _ref2$overwrite === undefined ? false : _ref2$overwrite;
+
   var setIfNull, converter, fileContents, promises;
   return regeneratorRuntime.async(function restoreFromCSV$(_context3) {
     while (1) {
@@ -196,6 +197,7 @@ function restoreFromCSV() {
           // If there is a value, it does nothing. If there is no value (null),
           // it sets a value at that path.
 
+
           converter = new (require("csvtojson").Converter)();
           _context3.next = 4;
           return regeneratorRuntime.awrap(new _bluebird2.default(function (resolve, reject) {
@@ -214,9 +216,10 @@ function restoreFromCSV() {
           }
 
           promises = fileContents.splice(0, 100).map(function (object) {
-            var path = object.path;
-            var value = object.value;
+            var path = object.path,
+                value = object.value;
 
+            console.log(filename + ' - Path: ' + path);
             if (overwrite) {
               return ref.child(path).set(value);
             } else {

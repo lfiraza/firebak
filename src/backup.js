@@ -1,10 +1,10 @@
 'use strict';
 import ax from 'axios';
-import {keys, values} from 'lodash';
+import { keys, values } from 'lodash';
 import fs from 'fs';
 import path from 'path';
 import sizeof from 'object-sizeof';
-import Table from 'cli-table';
+import Table, { forEach } from 'cli-table';
 
 /**
  * Backup command function
@@ -42,13 +42,13 @@ export default async function backup({
   // Create the destination directory if it doesn't exist.
   destination = path.resolve('.', destination);
   let dirs = destination.split('/'), currentDir = '';
-  while(dirs.length > 0) {
+  while (dirs.length > 0) {
     currentDir += dirs.shift() + '/'
     if (!fs.existsSync(currentDir)) fs.mkdirSync(currentDir);
   }
 
   const introTable = new Table();
-  introTable.push({'date/time': new Date().toLocaleString() });
+  introTable.push({ 'date/time': new Date().toLocaleString() });
   console.info('\n >> Firebak: Backup');
   console.info(introTable.toString());
 
@@ -62,7 +62,7 @@ export default async function backup({
   // Using a while loop so that the await keyword is respected.
   // A for-each loop would launch all of the shardedBackupToFile
   // functions concurrently.
-  while(backupRules.length > 0) {
+  while (backupRules.length > 0) {
     const backup = backupRules.shift();
 
     console.info(` >> Backup starting: ${backup.path}`);
@@ -76,12 +76,12 @@ export default async function backup({
       tableComplete = new Table();
 
     tableComplete.push(
-      {'file': filename },
-      {'rule': backup.rule },
-      {'duration (sec)': (t2 - t1) / 1000 },
-      {'max request size (mb)': result.maxRequestSize / 1000000},
-      {'total request size (mb)': result.totalRequestSize / 1000000},
-      {'total objects (not counting nested)': result.totalObjects}
+      { 'file': filename },
+      { 'rule': backup.rule },
+      { 'duration (sec)': (t2 - t1) / 1000 },
+      { 'max request size (mb)': result.maxRequestSize / 1000000 },
+      { 'total request size (mb)': result.totalRequestSize / 1000000 },
+      { 'total objects (not counting nested)': result.totalObjects }
     );
 
     console.info(` >> Backup complete: ${backup.path}`);
@@ -96,9 +96,9 @@ export default async function backup({
 
   const table = new Table();
   table.push(
-    {'total duration (sec)': totalDuration },
-    {'max request size (mb)': maxRequestSize / 1000000 },
-    {'total request size (mb)': totalRequestSize / 1000000 },
+    { 'total duration (sec)': totalDuration },
+    { 'max request size (mb)': maxRequestSize / 1000000 },
+    { 'total request size (mb)': totalRequestSize / 1000000 },
     { 'total objects (not counting nested)': totalObjects }
   );
   console.info(' >> Backup complete: all collections');
@@ -120,11 +120,25 @@ async function shardedBackupToFile({ firebase, path, rule, secret, filename }) {
   // Writes each key in the store object as the first col and the value as the second col.
   // Then clear the store
   function storeToFile() {
-    const
-      paths = keys(store),
-      // Important that there be no space
-      csvLines = paths.map(path => `"${path}","${store[path]}"`);
-    fs.appendFileSync(filename, csvLines.join('\n'), 'utf8');
+    const { parse } = require('json2csv');
+    const paths = keys(store);
+    // Important that there be no space
+    //csvLines = paths.map(path => `"${path}","${store[path]}"`);
+
+    paths.forEach(path => {
+      let value = store[path];
+      if (typeof value == 'string') {
+        value = value.replace(/(?:\r\n|\r|\n)/g, '<csv-firebak-br>');
+      }
+      let toCsv = {
+        'path': path,
+        'value': value
+      };
+
+      let opts = { eol: true, header: false };
+      let csv = parse(toCsv, opts) + "\n";
+      fs.appendFileSync(filename, csv, 'utf8');
+    });
     store = {};
   }
 
@@ -133,8 +147,8 @@ async function shardedBackupToFile({ firebase, path, rule, secret, filename }) {
   fs.writeFileSync(filename, '"path","value"\n', 'utf8');
 
   // Call the REST API until you receive fewer results than limitToFirst
-  while(count === limitToFirst) {
-    const result = await ax.get(`https://${firebase}.firebaseio.com/${path}.json`, {
+  while (count === limitToFirst) {
+    const result = await ax.get(`https://${firebase}/${path}.json`, {
       params: {
         auth: secret,
         format: `export`,
@@ -176,7 +190,7 @@ async function shardedBackupToFile({ firebase, path, rule, secret, filename }) {
 }
 
 async function backupSecurityAndRules({ firebase, secret, filename }) {
-  const rulesResult = await ax.get(`https://${firebase}.firebaseio.com/.settings/rules/.json`, {
+  const rulesResult = await ax.get(`https://${firebase}/.settings/rules/.json`, {
     params: {
       auth: secret
     }
@@ -194,7 +208,7 @@ async function backupSecurityAndRules({ firebase, secret, filename }) {
  */
 async function getBackupRules({ firebase, secret }) {
   // Fetch the rules
-  const rulesResult = await ax.get(`https://${firebase}.firebaseio.com/.settings/rules/.json`, {
+  const rulesResult = await ax.get(`https://${firebase}/.settings/rules/.json`, {
     params: {
       auth: secret
     }
@@ -202,34 +216,35 @@ async function getBackupRules({ firebase, secret }) {
 
   // Convert the rules to an array, remove any comments per line,
   // and convert back to a string (JSON format).
-  const rulesString = rulesResult.data.split('\n')
-    .map(line => {
-      if (line.indexOf('//') > -1) {
-        line = line.slice(0, line.indexOf('//'));
-      }
-      if (line.indexOf('/*') > -1) {
-        const
-          head = line.slice(0, line.indexOf('/*')),
-          tail = line.slice(line.indexOf('*/') + 2, line.length);
-        return head + tail;
-      }
-      return line;
-    })
-    .join('');
+  // const rulesString = rulesResult.data.split('\n')
+  //   .map(line => {
+  //     if (line.indexOf('//') > -1) {
+  //       line = line.slice(0, line.indexOf('//'));
+  //     }
+  //     if (line.indexOf('/*') > -1) {
+  //       const
+  //         head = line.slice(0, line.indexOf('/*')),
+  //         tail = line.slice(line.indexOf('*/') + 2, line.length);
+  //       return head + tail;
+  //     }
+  //     return line;
+  //   })
+  //   .join('');
 
   // Rules are now in parseable JSON format, convert rules to an object
-  const rulesObject = JSON.parse(rulesString);
+  // const rulesObject = JSON.parse(rulesString);
 
+  const rulesObject = rulesResult.data;
   // Recursively visit all paths in the rules object.
   // Push any paths containing 'firebak:' into the backupPaths array.
   // This is similar but not quite the same as flattenObject function.
   const backupPaths = [];
   function findBackupPaths(object, path = '') {
-    if(path.indexOf('firebak:') > -1) {
+    if (path.indexOf('firebak:') > -1) {
       backupPaths.push(path);
     }
     keys(object).forEach(key => {
-      if(typeof object[key] === 'object') {
+      if (typeof object[key] === 'object') {
         findBackupPaths(object[key], `${path}/${key}`);
       }
     });
@@ -262,7 +277,7 @@ function flattenObject(object, path = '') {
   const flat = {};
   function visitChildren(innerObject, innerPath) {
     keys(innerObject).forEach(key => {
-      if(typeof innerObject[key] === 'object') {
+      if (typeof innerObject[key] === 'object') {
         visitChildren(innerObject[key], `${innerPath}/${key}`);
       } else {
         flat[`${innerPath}/${key}`] = innerObject[key];
